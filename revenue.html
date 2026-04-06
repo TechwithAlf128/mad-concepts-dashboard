@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAD Concepts — Catering Revenue Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #273549; --border: #334155;
+    --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+    --accent: #f59e0b; --green: #22c55e; --blue: #3b82f6; --red: #ef4444; --purple: #8b5cf6;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; background: transparent; color: var(--text3); transition: all 0.2s; text-decoration: none; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { background: var(--accent); color: #000; }
+
+  /* DATE RANGE BAR */
+  .date-bar { display: flex; align-items: center; gap: 8px; padding: 16px 24px 0; max-width: 1400px; margin: 0 auto; }
+  .date-toggle { display: flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+  .date-btn { padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; background: transparent; color: var(--text3); transition: all 0.15s; }
+  .date-btn:hover { color: var(--text); }
+  .date-btn.active { background: var(--accent); color: #000; }
+  .date-custom { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+  .date-custom label { font-size: 11px; color: var(--text3); }
+  .date-input { background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; }
+  .date-input::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+  .date-range-label { font-size: 12px; color: var(--text2); margin-left: auto; font-weight: 500; }
+
+  /* LAYOUT */
+  .dashboard { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 4px; }
+  .kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .kpi-green { color: var(--green); }
+  .kpi-accent { color: var(--accent); }
+  .kpi-blue { color: var(--blue); }
+  .kpi-purple { color: var(--purple); }
+  .kpi-red { color: var(--red); }
+
+  /* CHARTS */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .chart-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .chart-wrap { position: relative; height: 260px; }
+
+  /* TABLES */
+  .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .table-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .table-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; font-size: 12px; border-bottom: 1px solid rgba(51,65,85,0.5); }
+  tr:hover { background: var(--bg3); }
+  .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .badge-green { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .badge-amber { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .badge-blue { background: rgba(59,130,246,0.2); color: #3b82f6; }
+  .badge-purple { background: rgba(139,92,246,0.2); color: #8b5cf6; }
+  .badge-red { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .bar-bg { width: 100%; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  /* FULL WIDTH */
+  .full-row { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo"><img src="https://jakesburgersandbeer.com/wp-content/uploads/2024/03/cropped-Favicon_burger_noback-32x32.png" style="height:24px;vertical-align:middle;margin-right:6px">MAD Concepts</div>
+    <div class="nav-tabs">
+      <a class="nav-tab" href="index.html">Leads & Map</a>
+      <a class="nav-tab active" href="revenue.html">Revenue</a>
+    </div>
+  </div>
+</div>
+
+<!-- DATE RANGE BAR -->
+<div class="date-bar">
+  <div class="date-toggle">
+    <button class="date-btn" data-range="today" onclick="setRange('today')">Today</button>
+    <button class="date-btn" data-range="week" onclick="setRange('week')">This Week</button>
+    <button class="date-btn" data-range="month" onclick="setRange('month')">This Month</button>
+    <button class="date-btn active" data-range="all" onclick="setRange('all')">All Time</button>
+    <button class="date-btn" data-range="custom" onclick="setRange('custom')">Custom</button>
+  </div>
+  <div class="date-custom" id="customDates" style="display:none">
+    <label>From</label>
+    <input type="date" class="date-input" id="dateFrom">
+    <label>To</label>
+    <input type="date" class="date-input" id="dateTo">
+    <button class="date-btn" style="background:var(--blue);color:#fff" onclick="applyCustomRange()">Apply</button>
+  </div>
+  <div class="date-range-label" id="rangeLabel">Showing: All Time</div>
+</div>
+
+<div class="dashboard">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Pipeline</div>
+      <div class="kpi-value kpi-accent" id="kpiPipeline">$0</div>
+      <div class="kpi-sub" id="kpiPipelineSub">0 active leads</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue Won</div>
+      <div class="kpi-value kpi-green" id="kpiWon">$0</div>
+      <div class="kpi-sub" id="kpiWonSub">0 deals closed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Deal Size</div>
+      <div class="kpi-value kpi-blue" id="kpiAvgDeal">$0</div>
+      <div class="kpi-sub">per won account</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value kpi-purple" id="kpiConversion">0%</div>
+      <div class="kpi-sub" id="kpiConvSub">won / total contacted</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Monthly Target</div>
+      <div class="kpi-value" id="kpiTarget" style="color:var(--text)">$40,000</div>
+      <div class="kpi-sub" id="kpiTargetSub">
+        <div class="bar-bg"><div class="bar-fill" id="targetBar" style="width:0%;background:var(--green)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Location</div>
+      <div class="chart-wrap"><canvas id="chartRevByLoc"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pipeline by Status</div>
+      <div class="chart-wrap"><canvas id="chartPipeline"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Lead Score Distribution</div>
+      <div class="chart-wrap"><canvas id="chartScoreDist"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Leads by Business Type</div>
+      <div class="chart-wrap"><canvas id="chartBizType"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLES ROW -->
+  <div class="tables-row">
+    <div class="table-card">
+      <div class="table-title">Top Revenue Locations</div>
+      <table>
+        <thead><tr><th>Location</th><th>Leads</th><th>Won</th><th>Revenue</th><th>Avg Score</th></tr></thead>
+        <tbody id="tableLocations"></tbody>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Recent Wins</div>
+      <table>
+        <thead><tr><th>Company</th><th>Location</th><th>Revenue</th><th>Date</th></tr></thead>
+        <tbody id="tableWins"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FULL WIDTH: Top Prospects -->
+  <div class="full-row">
+    <div class="table-card">
+      <div class="table-title">Highest Value Untouched Prospects</div>
+      <table>
+        <thead><tr><th>Rank</th><th>Company</th><th>Contact</th><th>Type</th><th>Employees</th><th>Location</th><th>Score</th><th>Est. Value</th></tr></thead>
+        <tbody id="tableProspects"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="crm-data.js"></script>
+<script>
+const API = '';
+let allLeads = [], leads = [], locations = [], locMap = {};
+let currentRange = 'all';
+let charts = {};
+
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#334155';
+Chart.defaults.font.family = 'Inter';
+
+async function init() {
+  locations = LOCATIONS_DATA;
+  locMap = {};
+  locations.forEach(l => locMap[l.id] = l);
+
+  allLeads = CRM_DATA.leads;
+
+  // Set default date inputs to today
+  const today = new Date().toISOString().split('T')[0];
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  document.getElementById('dateTo').value = today;
+  document.getElementById('dateFrom').value = monthAgo;
+
+  applyFilter();
+}
+
+// ── DATE RANGE ──
+function setRange(range) {
+  currentRange = range;
+  document.querySelectorAll('.date-btn[data-range]').forEach(b => b.classList.toggle('active', b.dataset.range === range));
+  document.getElementById('customDates').style.display = range === 'custom' ? 'flex' : 'none';
+  if (range !== 'custom') applyFilter();
+}
+
+function applyCustomRange() { applyFilter(); }
+
+function getDateRange() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch (currentRange) {
+    case 'today': return { from: today, to: new Date(today.getTime() + 86400000) };
+    case 'week': {
+      const dow = today.getDay();
+      const start = new Date(today.getTime() - dow * 86400000);
+      return { from: start, to: new Date(today.getTime() + 86400000) };
+    }
+    case 'month': return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: new Date(today.getTime() + 86400000) };
+    case 'custom': {
+      const f = document.getElementById('dateFrom').value;
+      const t = document.getElementById('dateTo').value;
+      return { from: f ? new Date(f) : new Date(0), to: t ? new Date(new Date(t).getTime() + 86400000) : new Date() };
+    }
+    default: return { from: new Date(0), to: new Date(9999999999999) };
+  }
+}
+
+function applyFilter() {
+  const { from, to } = getDateRange();
+  leads = allLeads.filter(l => {
+    const d = new Date(l.updated_at || l.created_at);
+    return d >= from && d < to;
+  });
+
+  // Update range label
+  const labels = { today: 'Today', week: 'This Week', month: 'This Month', all: 'All Time', custom: `${document.getElementById('dateFrom').value} — ${document.getElementById('dateTo').value}` };
+  document.getElementById('rangeLabel').textContent = `Showing: ${labels[currentRange]} (${leads.length} leads)`;
+
+  // Destroy existing charts before re-rendering
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  renderKPIs();
+  renderCharts();
+  renderTables();
+}
+
+function fmt$(n) { return n >= 1000 ? `$${(n/1000).toFixed(1)}K` : `$${n.toLocaleString()}`; }
+
+function estValue(lead) {
+  const ppl = Math.min(lead.employee_count || 50, 500);
+  return Math.round(ppl * 0.10 * 18 * 2);
+}
+
+function renderKPIs() {
+  const active = leads.filter(l => l.status !== 'pass');
+  const won = leads.filter(l => l.status === 'won');
+  const contacted = leads.filter(l => ['contacted','meeting','quote','won','pass'].includes(l.status));
+  const totalRev = leads.reduce((s, l) => s + (l.revenue_won || 0), 0);
+  const pipeline = active.reduce((s, l) => s + estValue(l), 0);
+
+  document.getElementById('kpiPipeline').textContent = fmt$(pipeline);
+  document.getElementById('kpiPipelineSub').textContent = `${active.length} active leads`;
+
+  document.getElementById('kpiWon').textContent = `$${totalRev.toLocaleString()}`;
+  document.getElementById('kpiWonSub').textContent = `${won.length} deals closed`;
+
+  const avgDeal = won.length ? Math.round(totalRev / won.length) : 0;
+  document.getElementById('kpiAvgDeal').textContent = fmt$(avgDeal);
+
+  const convRate = contacted.length ? Math.round((won.length / contacted.length) * 100) : 0;
+  document.getElementById('kpiConversion').textContent = `${convRate}%`;
+  document.getElementById('kpiConvSub').textContent = `${won.length} won / ${contacted.length} contacted`;
+
+  const targetPct = Math.min(100, Math.round((totalRev / 40000) * 100));
+  document.getElementById('targetBar').style.width = `${targetPct}%`;
+  document.getElementById('targetBar').style.background = targetPct >= 100 ? '#22c55e' : targetPct >= 50 ? '#f59e0b' : '#ef4444';
+}
+
+function renderCharts() {
+  // Revenue by Location (horizontal bar)
+  const locRevenue = {};
+  const locLeadCount = {};
+  locations.forEach(l => { locRevenue[l.id] = 0; locLeadCount[l.id] = 0; });
+  leads.forEach(l => {
+    locRevenue[l.location_id] = (locRevenue[l.location_id] || 0) + (l.revenue_won || 0);
+    locLeadCount[l.location_id] = (locLeadCount[l.location_id] || 0) + 1;
+  });
+  const sortedLocs = locations.slice().sort((a, b) => (locRevenue[b.id] || 0) + locLeadCount[b.id] - (locRevenue[a.id] || 0) - locLeadCount[a.id]);
+
+  charts.revByLoc = new Chart(document.getElementById('chartRevByLoc'), {
+    type: 'bar',
+    data: {
+      labels: sortedLocs.map(l => l.name.replace("Jake's ", '').replace('Tacos & Avocados ', 'T&A ')),
+      datasets: [
+        { label: 'Revenue Won', data: sortedLocs.map(l => locRevenue[l.id] || 0), backgroundColor: '#22c55e88', borderColor: '#22c55e', borderWidth: 1 },
+        { label: 'Est. Pipeline', data: sortedLocs.map(l => leads.filter(ld => ld.location_id === l.id).reduce((s, ld) => s + estValue(ld), 0)), backgroundColor: '#f59e0b44', borderColor: '#f59e0b', borderWidth: 1 },
+      ]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { ticks: { callback: v => fmt$(v) } } } }
+  });
+
+  // Pipeline by Status (doughnut)
+  const statusCounts = {};
+  leads.forEach(l => statusCounts[l.status] = (statusCounts[l.status] || 0) + 1);
+  const statusColors = { new: '#3b82f6', contacted: '#f59e0b', meeting: '#8b5cf6', quote: '#ec4899', won: '#22c55e', pass: '#6b7280' };
+  const statuses = Object.keys(statusCounts);
+
+  charts.pipeline = new Chart(document.getElementById('chartPipeline'), {
+    type: 'doughnut',
+    data: {
+      labels: statuses.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+      datasets: [{ data: statuses.map(s => statusCounts[s]), backgroundColor: statuses.map(s => statusColors[s] || '#888'), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right' } } }
+  });
+
+  // Score Distribution (histogram)
+  const scoreBuckets = { '90-100': 0, '80-89': 0, '70-79': 0, '60-69': 0, '50-59': 0, '<50': 0 };
+  leads.forEach(l => {
+    if (l.score >= 90) scoreBuckets['90-100']++;
+    else if (l.score >= 80) scoreBuckets['80-89']++;
+    else if (l.score >= 70) scoreBuckets['70-79']++;
+    else if (l.score >= 60) scoreBuckets['60-69']++;
+    else if (l.score >= 50) scoreBuckets['50-59']++;
+    else scoreBuckets['<50']++;
+  });
+  const bucketColors = ['#22c55e', '#84cc16', '#f59e0b', '#f97316', '#ef4444', '#991b1b'];
+
+  charts.scoreDist = new Chart(document.getElementById('chartScoreDist'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(scoreBuckets),
+      datasets: [{ label: 'Leads', data: Object.values(scoreBuckets), backgroundColor: bucketColors, borderWidth: 0, borderRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } } }
+  });
+
+  // Business Type (horizontal bar)
+  const typeCounts = {};
+  leads.forEach(l => typeCounts[l.business_type] = (typeCounts[l.business_type] || 0) + 1);
+  const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+  const typeColors = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444', '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#a855f7', '#64748b'];
+
+  charts.bizType = new Chart(document.getElementById('chartBizType'), {
+    type: 'bar',
+    data: {
+      labels: sortedTypes.map(t => t[0]),
+      datasets: [{ label: 'Leads', data: sortedTypes.map(t => t[1]), backgroundColor: typeColors.slice(0, sortedTypes.length), borderWidth: 0, borderRadius: 4 }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderTables() {
+  // Top Revenue Locations
+  const locStats = {};
+  locations.forEach(l => locStats[l.id] = { name: l.name, leads: 0, won: 0, revenue: 0, scoreSum: 0 });
+  leads.forEach(l => {
+    const s = locStats[l.location_id];
+    if (!s) return;
+    s.leads++;
+    s.scoreSum += l.score;
+    if (l.status === 'won') { s.won++; s.revenue += l.revenue_won || 0; }
+  });
+  const sortedLocStats = Object.values(locStats).sort((a, b) => b.revenue - a.revenue || b.leads - a.leads);
+
+  document.getElementById('tableLocations').innerHTML = sortedLocStats.map(s => {
+    const avg = s.leads ? Math.round(s.scoreSum / s.leads) : 0;
+    return `<tr>
+      <td>${s.name.replace("Jake's ", '').replace('Tacos & Avocados ', 'T&A ')}</td>
+      <td>${s.leads}</td>
+      <td><span class="badge badge-green">${s.won}</span></td>
+      <td style="color:var(--green);font-weight:600">${s.revenue ? `$${s.revenue.toLocaleString()}` : '—'}</td>
+      <td>${avg}</td>
+    </tr>`;
+  }).join('');
+
+  // Recent Wins
+  const wins = leads.filter(l => l.status === 'won').sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  document.getElementById('tableWins').innerHTML = wins.length ? wins.slice(0, 10).map(l => {
+    const loc = locMap[l.location_id];
+    return `<tr>
+      <td style="font-weight:600">${l.company}</td>
+      <td>${loc ? loc.name.replace("Jake's ", '').replace('Tacos & Avocados ', 'T&A ') : '—'}</td>
+      <td style="color:var(--green);font-weight:600">$${(l.revenue_won || 0).toLocaleString()}</td>
+      <td style="color:var(--text3)">${new Date(l.updated_at).toLocaleDateString()}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:20px">No wins yet — get calling!</td></tr>';
+
+  // Top Prospects (uncontacted, by score)
+  const prospects = leads.filter(l => l.status === 'new').sort((a, b) => b.score - a.score).slice(0, 15);
+  document.getElementById('tableProspects').innerHTML = prospects.map((l, i) => {
+    const loc = locMap[l.location_id];
+    const scoreClass = l.score >= 80 ? 'badge-green' : l.score >= 65 ? 'badge-amber' : 'badge-blue';
+    return `<tr>
+      <td style="font-weight:700;color:var(--accent)">#${i + 1}</td>
+      <td style="font-weight:600">${l.company}</td>
+      <td>${l.contact_name || '—'}<br><span style="color:var(--text3);font-size:11px">${l.contact_title || ''}</span></td>
+      <td><span class="badge badge-blue">${l.business_type}</span></td>
+      <td>${l.employee_count ? l.employee_count.toLocaleString() : '—'}</td>
+      <td>${loc ? loc.name.replace("Jake's ", '').replace('Tacos & Avocados ', 'T&A ') : '—'}</td>
+      <td><span class="badge ${scoreClass}">${l.score}</span></td>
+      <td style="color:var(--accent);font-weight:600">${fmt$(estValue(l))}/mo</td>
+    </tr>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAD Concepts — Catering Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #273549; --border: #334155;
+    --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+    --accent: #f59e0b; --accent2: #ef4444; --green: #22c55e; --blue: #3b82f6;
+    --radius: 10px;
+  }
+  .brand-ta { --accent: #22c55e; --accent2: #f97316; --bg: #0a1a0a; --bg2: #132013; --bg3: #1a2e1a; --border: #2d4a2d; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; transition: background 0.3s; }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand-toggle { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 3px; }
+  .brand-btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; background: transparent; color: var(--text3); transition: all 0.2s; }
+  .brand-btn.active { background: var(--accent); color: #000; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .stat-pill { background: var(--bg3); padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .stat-pill .num { color: var(--accent); }
+
+  /* LAYOUT */
+  .layout { display: flex; height: calc(100vh - 56px); }
+  .map-panel { flex: 1; position: relative; }
+  .side-panel { width: 420px; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+
+  /* FILTERS */
+  .filters { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filter-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+  .search-input { flex: 1; min-width: 120px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+  .search-input::placeholder { color: var(--text3); }
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+  .btn-accent { background: var(--accent); color: #000; }
+  .btn-accent:hover { filter: brightness(1.1); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+  .btn-outline:hover { border-color: var(--text3); color: var(--text); }
+
+  /* LEAD LIST */
+  .lead-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .lead-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
+  .lead-card:hover { border-color: var(--accent); background: var(--bg3); }
+  .lead-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .lead-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .lead-company { font-weight: 600; font-size: 13px; }
+  .lead-score { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .score-high { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .score-med { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .score-low { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .lead-meta { display: flex; gap: 12px; font-size: 11px; color: var(--text3); }
+  .lead-contact { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .status-new { background: rgba(59,130,246,0.2); color: #3b82f6; }
+  .status-contacted { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .status-meeting { background: rgba(139,92,246,0.2); color: #8b5cf6; }
+  .status-quote { background: rgba(236,72,153,0.2); color: #ec4899; }
+  .status-won { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .status-pass { background: rgba(107,114,128,0.2); color: #6b7280; }
+  .lead-count { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); text-align: center; }
+
+  /* DETAIL DRAWER */
+  .drawer { position: fixed; top: 56px; right: 0; width: min(560px, 100vw); height: calc(100vh - 56px); background: var(--bg2); border-left: 2px solid var(--accent); z-index: 300; transform: translateX(100%); transition: transform 0.25s ease; overflow-y: auto; overflow-x: hidden; padding: 24px 28px; box-shadow: -8px 0 30px rgba(0,0,0,0.6); }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .drawer-close { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; }
+  .drawer h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .drawer-section { margin-bottom: 16px; }
+  .drawer-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 6px; }
+  .drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .drawer-field { background: var(--bg); padding: 8px 10px; border-radius: 6px; }
+  .drawer-field label { font-size: 10px; color: var(--text3); display: block; margin-bottom: 2px; }
+  .drawer-field span { font-size: 12px; }
+  .note-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .note-item { background: var(--bg); padding: 8px 10px; border-radius: 6px; font-size: 12px; }
+  .note-date { font-size: 10px; color: var(--text3); }
+  .note-input { display: flex; gap: 6px; margin-top: 8px; }
+  .note-input input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+  .drawer-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .drawer-actions select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+
+  /* ADD LEAD MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 480px; max-height: 80vh; overflow-y: auto; padding: 24px; }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 11px; color: var(--text3); }
+  .form-group input, .form-group select, .form-group textarea { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  /* MAP */
+  #map { width: 100%; height: 100%; }
+  .leaflet-popup-content-wrapper { background: var(--bg2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+  .leaflet-popup-tip { background: var(--bg2); }
+  .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo"><img src="https://jakesburgersandbeer.com/wp-content/uploads/2024/03/cropped-Favicon_burger_noback-32x32.png" style="height:24px;vertical-align:middle;margin-right:6px">MAD Concepts</div>
+    <div class="brand-toggle">
+      <button class="brand-btn active" data-brand="jakes" onclick="setBrand('jakes')">Jake's Burgers</button>
+      <button class="brand-btn" data-brand="ta" onclick="setBrand('ta')">Tacos & Avocados</button>
+      <button class="brand-btn" data-brand="all" onclick="setBrand('all')">All</button>
+    </div>
+    <a href="revenue.html" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--text3);text-decoration:none;border:1px solid var(--border);margin-left:8px">Revenue</a>
+  </div>
+  <div class="header-right">
+    <span class="stat-pill">Leads: <span class="num" id="statTotal">0</span></span>
+    <span class="stat-pill">Avg Score: <span class="num" id="statAvg">0</span></span>
+    <span class="stat-pill">Won: <span class="num" id="statWon">$0</span></span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="map-panel"><div id="map"></div></div>
+  <div class="side-panel">
+    <div class="filters">
+      <select class="filter-select" id="filterLocation"><option value="">All locations</option></select>
+      <select class="filter-select" id="filterStatus">
+        <option value="">All status</option>
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="meeting">Meeting</option>
+        <option value="quote">Quote</option>
+        <option value="won">Won</option>
+        <option value="pass">Pass</option>
+      </select>
+      <input class="search-input" id="searchInput" placeholder="Search leads...">
+      <button class="btn btn-accent" onclick="openAddModal()">+ Add</button>
+    </div>
+    <div class="lead-list" id="leadList"></div>
+    <div class="lead-count" id="leadCount"></div>
+  </div>
+</div>
+
+<!-- DETAIL DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <h2 id="drawerCompany"></h2>
+      <span class="status-badge" id="drawerStatus"></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">&times;</button>
+  </div>
+  <div class="drawer-section">
+    <div class="drawer-label">Contact</div>
+    <div class="drawer-grid">
+      <div class="drawer-field"><label>Name</label><span id="drawerContact"></span></div>
+      <div class="drawer-field"><label>Title</label><span id="drawerTitle"></span></div>
+      <div class="drawer-field"><label>Phone</label><span id="drawerPhone"></span></div>
+      <div class="drawer-field"><label>Email</label><span id="drawerEmail"></span></div>
+    </div>
+  </div>
+  <div class="drawer-section">
+    <div class="drawer-label">Details</div>
+    <div class="drawer-grid">
+      <div class="drawer-field"><label>Type</label><span id="drawerType"></span></div>
+      <div class="drawer-field"><label>Employees</label><span id="drawerEmployees"></span></div>
+      <div class="drawer-field"><label>Score</label><span id="drawerScore"></span></div>
+      <div class="drawer-field"><label>Distance</label><span id="drawerDist"></span></div>
+      <div class="drawer-field"><label>Location</label><span id="drawerLoc"></span></div>
+      <div class="drawer-field"><label>Revenue Won</label><span id="drawerRevenue"></span></div>
+    </div>
+  </div>
+  <div class="drawer-section">
+    <div class="drawer-label">Notes</div>
+    <div class="note-list" id="drawerNotes"></div>
+    <div class="note-input">
+      <input id="noteInput" placeholder="Add a note...">
+      <button class="btn btn-accent" onclick="addNote()">Add</button>
+    </div>
+  </div>
+  <div class="drawer-actions">
+    <select id="statusChange" onchange="changeStatus(this.value)">
+      <option value="">Change status...</option>
+      <option value="new">New</option>
+      <option value="contacted">Contacted</option>
+      <option value="meeting">Meeting</option>
+      <option value="quote">Quote</option>
+      <option value="won">Won</option>
+      <option value="pass">Pass</option>
+    </select>
+    <button class="btn btn-outline" onclick="editLead()">Edit</button>
+    <button class="btn btn-outline" style="color:var(--accent2)" onclick="deleteLead()">Delete</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add New Lead</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Company</label><input id="fCompany"></div>
+      <div class="form-group"><label>Business Type</label>
+        <select id="fType"><option value="other">Other</option><option value="healthcare">Healthcare</option><option value="legal">Legal</option><option value="insurance">Insurance</option><option value="corporate">Corporate</option><option value="technology">Technology</option><option value="education">Education</option><option value="finance">Finance</option><option value="manufacturing">Manufacturing</option><option value="automotive">Automotive</option><option value="government">Government</option><option value="real_estate">Real Estate</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Contact Name</label><input id="fContact"></div>
+      <div class="form-group"><label>Title</label><input id="fTitle"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Phone</label><input id="fPhone"></div>
+      <div class="form-group"><label>Email</label><input id="fEmail"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Location</label><select id="fLocation"></select></div>
+      <div class="form-group"><label>Brand</label>
+        <select id="fBrand"><option value="jakes">Jake's Burgers</option><option value="ta">Tacos & Avocados</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Employees</label><input id="fEmployees" type="number"></div>
+      <div class="form-group"><label>Score (1-100)</label><input id="fScore" type="number" min="1" max="100" value="50"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full"><label>Notes</label><textarea id="fNotes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="saveLead()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="crm-data.js"></script>
+<script>
+const API = '';  // same origin
+let leads = [];
+let locations = [];
+let locMap = {};
+let currentBrand = 'jakes';
+let selectedLead = null;
+let editingId = null;
+let map, markers = [];
+
+// ── INIT ──
+async function init() {
+  locations = LOCATIONS_DATA;
+  locMap = {};
+  locations.forEach(l => locMap[l.id] = l);
+
+  // Populate location filters
+  const sel = document.getElementById('filterLocation');
+  const fsel = document.getElementById('fLocation');
+  locations.forEach(l => {
+    sel.add(new Option(l.name, l.id));
+    fsel.add(new Option(l.name, l.id));
+  });
+
+  // Init map
+  map = L.map('map', { zoomControl: false }).setView([32.85, -96.85], 10);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+  }).addTo(map);
+
+  await loadLeads();
+
+  // Event listeners
+  document.getElementById('filterLocation').addEventListener('change', loadLeads);
+  document.getElementById('filterStatus').addEventListener('change', loadLeads);
+  document.getElementById('searchInput').addEventListener('input', debounce(loadLeads, 300));
+}
+
+function debounce(fn, ms) { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+// ── DATA ──
+async function loadLeads() {
+  const loc = document.getElementById('filterLocation').value;
+  const status = document.getElementById('filterStatus').value;
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+
+  leads = CRM_DATA.leads.filter(l => {
+    if (currentBrand !== 'all' && l.brand !== currentBrand) return false;
+    if (loc && l.location_id !== loc) return false;
+    if (status && l.status !== status) return false;
+    if (q && !l.company.toLowerCase().includes(q) && !l.contact_name.toLowerCase().includes(q) && !l.business_type.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.score - a.score);
+  renderList();
+  renderMap();
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = leads.length;
+  const avg = leads.length ? Math.round(leads.reduce((s, l) => s + l.score, 0) / leads.length) : 0;
+  document.getElementById('statAvg').textContent = avg;
+  const rev = leads.reduce((s, l) => s + (l.revenue_won || 0), 0);
+  document.getElementById('statWon').textContent = rev ? `$${rev.toLocaleString()}` : '$0';
+}
+
+// ── BRAND ──
+function setBrand(brand) {
+  currentBrand = brand;
+  document.querySelectorAll('.brand-btn').forEach(b => b.classList.toggle('active', b.dataset.brand === brand));
+  document.body.classList.toggle('brand-ta', brand === 'ta');
+  loadLeads();
+}
+
+// ── RENDER LIST ──
+function renderList() {
+  const list = document.getElementById('leadList');
+  list.innerHTML = leads.map(l => {
+    const sc = l.score >= 75 ? 'high' : l.score >= 50 ? 'med' : 'low';
+    const loc = locMap[l.location_id];
+    return `<div class="lead-card ${selectedLead?.id === l.id ? 'active' : ''}" onclick="openDrawer('${l.id}')">
+      <div class="lead-top">
+        <span class="lead-company">${esc(l.company)}</span>
+        <span class="lead-score score-${sc}">${l.score}</span>
+      </div>
+      <div class="lead-meta">
+        <span class="status-badge status-${l.status}">${l.status}</span>
+        <span>${loc ? loc.name : l.location_id}</span>
+        <span>${l.business_type}</span>
+      </div>
+      ${l.contact_name ? `<div class="lead-contact">${esc(l.contact_name)} — ${esc(l.contact_title)}</div>` : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('leadCount').textContent = `${leads.length} leads`;
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── RENDER MAP ──
+function renderMap() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  // Location markers (larger)
+  const brandLocs = currentBrand === 'all' ? locations : locations.filter(l => l.brand === currentBrand);
+  brandLocs.forEach(loc => {
+    const isJakes = loc.brand === 'jakes';
+    const markerHtml = isJakes
+      ? `<div style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);overflow:hidden;background:#1a1a1a"><img src="https://jakesburgersandbeer.com/wp-content/uploads/2024/03/cropped-Favicon_burger_noback-32x32.png" style="width:100%;height:100%;object-fit:contain"></div>`
+      : `<div style="background:#22c55e;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)">🥑</div>`;
+    const icon = L.divIcon({
+      className: '',
+      html: markerHtml,
+      iconSize: [32, 32], iconAnchor: [16, 16],
+    });
+    const m = L.marker([loc.lat, loc.lng], { icon }).addTo(map);
+    const locLeads = leads.filter(l => l.location_id === loc.id);
+    m.bindPopup(`<b>${loc.name}</b><br>${loc.address}<br><span style="color:#f59e0b">${locLeads.length} leads nearby</span>`);
+    markers.push(m);
+  });
+}
+
+// ── DRAWER ──
+function openDrawer(id) {
+  selectedLead = leads.find(l => l.id === id) || null;
+  if (!selectedLead) return;
+  const l = selectedLead;
+  const loc = locMap[l.location_id];
+
+  document.getElementById('drawerCompany').textContent = l.company;
+  const sb = document.getElementById('drawerStatus');
+  sb.textContent = l.status;
+  sb.className = `status-badge status-${l.status}`;
+  document.getElementById('drawerContact').textContent = l.contact_name || '—';
+  document.getElementById('drawerTitle').textContent = l.contact_title || '—';
+  document.getElementById('drawerPhone').textContent = l.phone || '—';
+  document.getElementById('drawerEmail').textContent = l.email || '—';
+  document.getElementById('drawerType').textContent = l.business_type;
+  document.getElementById('drawerEmployees').textContent = l.employee_count || '—';
+  document.getElementById('drawerScore').textContent = l.score;
+  document.getElementById('drawerDist').textContent = l.distance_mi ? `${l.distance_mi} mi` : '—';
+  document.getElementById('drawerLoc').textContent = loc ? loc.name : l.location_id;
+  document.getElementById('drawerRevenue').textContent = l.revenue_won ? `$${l.revenue_won.toLocaleString()}` : '$0';
+  document.getElementById('statusChange').value = '';
+
+  const notesEl = document.getElementById('drawerNotes');
+  notesEl.innerHTML = (l.notes || []).slice().reverse().map(n =>
+    `<div class="note-item"><div class="note-date">${new Date(n.date).toLocaleDateString()} — ${n.source}</div>${esc(n.text)}</div>`
+  ).join('') || '<div style="color:var(--text3);font-size:12px">No notes yet</div>';
+
+  document.getElementById('drawer').classList.add('open');
+  renderList();  // update active state
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  selectedLead = null;
+  renderList();
+}
+
+// ── ACTIONS ──
+async function addNote() {
+  if (!selectedLead) return;
+  const input = document.getElementById('noteInput');
+  const text = input.value.trim();
+  if (!text) return;
+  await fetch(`${API}/api/leads/${selectedLead.id}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, source: 'dashboard', update_contact: true }),
+  });
+  input.value = '';
+  await loadLeads();
+  openDrawer(selectedLead.id);
+}
+
+async function changeStatus(status) {
+  if (!selectedLead || !status) return;
+  await fetch(`${API}/api/leads/${selectedLead.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  await loadLeads();
+  openDrawer(selectedLead.id);
+}
+
+async function deleteLead() {
+  if (!selectedLead || !confirm(`Delete ${selectedLead.company}?`)) return;
+  await fetch(`${API}/api/leads/${selectedLead.id}`, { method: 'DELETE' });
+  closeDrawer();
+  await loadLeads();
+}
+
+function editLead() {
+  if (!selectedLead) return;
+  editingId = selectedLead.id;
+  const l = selectedLead;
+  document.getElementById('modalTitle').textContent = 'Edit Lead';
+  document.getElementById('fCompany').value = l.company;
+  document.getElementById('fType').value = l.business_type;
+  document.getElementById('fContact').value = l.contact_name;
+  document.getElementById('fTitle').value = l.contact_title;
+  document.getElementById('fPhone').value = l.phone;
+  document.getElementById('fEmail').value = l.email;
+  document.getElementById('fLocation').value = l.location_id;
+  document.getElementById('fBrand').value = l.brand;
+  document.getElementById('fEmployees').value = l.employee_count;
+  document.getElementById('fScore').value = l.score;
+  document.getElementById('fNotes').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ── ADD MODAL ──
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add New Lead';
+  ['fCompany','fContact','fTitle','fPhone','fEmail','fNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fEmployees').value = '';
+  document.getElementById('fScore').value = '50';
+  document.getElementById('fType').value = 'other';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingId = null;
+}
+
+async function saveLead() {
+  const data = {
+    company: document.getElementById('fCompany').value,
+    business_type: document.getElementById('fType').value,
+    contact_name: document.getElementById('fContact').value,
+    contact_title: document.getElementById('fTitle').value,
+    phone: document.getElementById('fPhone').value,
+    email: document.getElementById('fEmail').value,
+    location_id: document.getElementById('fLocation').value,
+    brand: document.getElementById('fBrand').value,
+    employee_count: parseInt(document.getElementById('fEmployees').value) || 0,
+    score: parseInt(document.getElementById('fScore').value) || 50,
+    notes: document.getElementById('fNotes').value,
+  };
+
+  if (editingId) {
+    await fetch(`${API}/api/leads/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } else {
+    await fetch(`${API}/api/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+  closeModal();
+  await loadLeads();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDrawer(); closeModal(); }
+});
+
+init();
+</script>
+
+</html>
