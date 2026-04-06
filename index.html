@@ -274,6 +274,9 @@ async function init() {
 
   await loadLeads();
 
+  // Fix map size after layout renders
+  setTimeout(() => map.invalidateSize(), 200);
+
   // Event listeners
   document.getElementById('filterLocation').addEventListener('change', loadLeads);
   document.getElementById('filterStatus').addEventListener('change', loadLeads);
