@@ -288,6 +288,16 @@ async function init() {
   // Fix map size after layout renders
   setTimeout(() => map.invalidateSize(), 200);
 
+  // Fix map when returning via back button (bfcache)
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && map) {
+      setTimeout(() => { map.invalidateSize(); renderMap(); }, 100);
+    }
+  });
+  window.addEventListener('focus', () => {
+    if (map) setTimeout(() => map.invalidateSize(), 100);
+  });
+
   // Event listeners
   document.getElementById('filterLocation').addEventListener('change', loadLeads);
   document.getElementById('filterStatus').addEventListener('change', loadLeads);
